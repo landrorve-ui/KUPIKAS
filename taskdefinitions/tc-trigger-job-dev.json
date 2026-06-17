@@ -1,0 +1,29 @@
+{
+  "family": "tc-trigger-job-dev",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::431546822103:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::431546822103:role/tc-trigger-job-dev-task-role",
+  "containerDefinitions": [
+    {
+      "name": "tc-trigger-job-dev",
+      "image": "431546822103.dkr.ecr.us-west-1.amazonaws.com/tc-trigger-job-dev:latest",
+      "essential": true,
+      "portMappings": [],
+      "environment": [
+        { "name": "NODE_ENV", "value": "development" }
+      ],
+      "secrets": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/tc-trigger-job-dev",
+          "awslogs-region": "us-west-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

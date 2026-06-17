@@ -1,0 +1,42 @@
+{
+  "family": "tc-backend-dev",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::431546822103:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::431546822103:role/tc-backend-dev-task-role",
+  "containerDefinitions": [
+    {
+      "name": "tc-backend-dev",
+      "image": "431546822103.dkr.ecr.us-west-1.amazonaws.com/tc-backend-dev:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3333,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "NODE_ENV", "value": "development" },
+        { "name": "PORT", "value": "3333" }
+      ],
+      "secrets": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/tc-backend-dev",
+          "awslogs-region": "us-west-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -qO- http://localhost:3333/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      }
+    }
+  ]
+}
