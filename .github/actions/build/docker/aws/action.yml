@@ -15,7 +15,7 @@ inputs:
   aws-region:
     description: AWS region
     required: true
-    default: "us-east-1"
+    default: "us-west-1"
   role-to-assume:
     description: ARN of the IAM role to assume via OIDC
     required: true
