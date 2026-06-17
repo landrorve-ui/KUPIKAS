@@ -1,0 +1,105 @@
+name: Build and Deploy to ECS
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_infra:
+        description: "Redeploy infrastructure task (Kafka/PG/Redis)?"
+        required: false
+        default: false
+        type: boolean
+      deploy_backend:
+        description: "Build and deploy backend?"
+        required: false
+        default: true
+        type: boolean
+      deploy_queue_job:
+        description: "Build and deploy queue job?"
+        required: false
+        default: true
+        type: boolean
+      deploy_trigger_job:
+        description: "Build and deploy trigger job?"
+        required: false
+        default: true
+        type: boolean
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER || 'telemetry-cluster' }}
+
+jobs:
+  build-and-push-backend:
+    name: Build and Push Backend Service
+    runs-on: [tc-prod]
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build and Push Backend to Docker Registry
+        id: build_step
+        uses: ./.github/actions/build/docker/aws
+        with:
+          image-name: "tc-backend-dev"
+          dockerfile-path: "docker/Dockerfile.backend"
+          context: "."
+          aws-region: "us-east-1"
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_DEV }}
+          deploy-env: "dev"
+          docker-tag: "${{ github.sha }}"
+          build-args: |
+            ENV_MODE=dev
+    if: ${{ github.event.inputs.deploy_backend == 'true' || github.event.inputs.deploy_backend == null }}
+  
+  build-and-push-queue-job:
+    name: Build and Push Queue Job Service
+    runs-on: [tc-prod]
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build and Push QueueJob to Docker Registry
+        id: build_step
+        uses: ./.github/actions/build/docker/aws
+        with:
+          image-name: "tc-queue-job-dev"
+          dockerfile-path: "docker/Dockerfile.queuejob"
+          context: "."
+          aws-region: "us-east-1"
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_DEV }}
+          deploy-env: "dev"
+          docker-tag: "${{ github.sha }}"
+          build-args: |
+            ENV_MODE=dev
+    if: ${{ github.event.inputs.deploy_queue_job == 'true' || github.event.inputs.deploy_queue_job == null }}
+  
+  build-and-push-trigger-job:
+    name: Build and Push Trigger Job Service
+    runs-on: [tc-prod]
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build and Push TriggerJob to Docker Registry
+        id: build_step
+        uses: ./.github/actions/build/docker/aws
+        with:
+          image-name: "tc-trigger-job-dev"
+          dockerfile-path: "docker/Dockerfile.triggerjob"
+          context: "."
+          aws-region: "us-east-1"
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_DEV }}
+          deploy-env: "dev"
+          docker-tag: "${{ github.sha }}"
+          build-args: |
+            ENV_MODE=dev
+    if: ${{ github.event.inputs.deploy_trigger_job == 'true' || github.event.inputs.deploy_trigger_job == null }}

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "apps/zupikas/src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "webpack": true,
+    "tsConfigPath": "apps/zupikas/tsconfig.app.json"
+  },
+  "monorepo": true,
+  "root": "apps/zupikas",
+  "projects": {
+    "backend": {
+      "type": "application",
+      "root": "apps/backend",
+      "entryFile": "main",
+      "sourceRoot": "apps/backend/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/backend/tsconfig.app.json"
+      }
+    },
+    "queue-job": {
+      "type": "application",
+      "root": "apps/queue-job",
+      "entryFile": "main",
+      "sourceRoot": "apps/queue-job/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/queue-job/tsconfig.app.json"
+      }
+    },
+    "timer": {
+      "type": "library",
+      "root": "libs/timer",
+      "entryFile": "index",
+      "sourceRoot": "libs/timer/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/timer/tsconfig.lib.json"
+      }
+    },
+    "trigger-job": {
+      "type": "application",
+      "root": "apps/trigger-job",
+      "entryFile": "main",
+      "sourceRoot": "apps/trigger-job/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/trigger-job/tsconfig.app.json"
+      }
+    },
+    "zupikas": {
+      "type": "application",
+      "root": "apps/zupikas",
+      "entryFile": "main",
+      "sourceRoot": "apps/zupikas/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/zupikas/tsconfig.app.json"
+      }
+    }
+  }
+}

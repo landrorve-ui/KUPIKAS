@@ -1,0 +1,82 @@
+name: Build and Push Docker Image to AWS ECR
+description: Authenticates to AWS via OIDC, builds a Docker image, and pushes it to ECR.
+
+inputs:
+  image-name:
+    description: ECR repository name (image name without tag)
+    required: true
+  dockerfile-path:
+    description: Path to the Dockerfile
+    required: true
+  context:
+    description: Docker build context path
+    required: true
+    default: "."
+  aws-region:
+    description: AWS region
+    required: true
+    default: "us-east-1"
+  role-to-assume:
+    description: ARN of the IAM role to assume via OIDC
+    required: true
+  deploy-env:
+    description: Deployment environment label (e.g. dev, staging, prod)
+    required: true
+  docker-tag:
+    description: Tag to apply to the Docker image (e.g. git SHA)
+    required: true
+  build-args:
+    description: Newline-delimited list of Docker build arguments (KEY=VALUE)
+    required: false
+    default: ""
+
+outputs:
+  image-uri:
+    description: Full ECR image URI (account.dkr.ecr.region.amazonaws.com/name:tag)
+    value: ${{ steps.build.outputs.image-uri }}
+
+runs:
+  using: composite
+  steps:
+    - name: Configure AWS Credentials (OIDC)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.role-to-assume }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Login to Amazon ECR
+      id: ecr-login
+      uses: aws-actions/amazon-ecr-login@v2
+      with:
+        region: ${{ inputs.aws-region }}
+
+    - name: Build and Push to ECR
+      id: build
+      shell: bash
+      env:
+        REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+        IMAGE_NAME: ${{ inputs.image-name }}
+        TAG: ${{ inputs.docker-tag }}
+        DOCKERFILE: ${{ inputs.dockerfile-path }}
+        CONTEXT: ${{ inputs.context }}
+        BUILD_ARGS: ${{ inputs.build-args }}
+      run: |
+        IMAGE_URI="${REGISTRY}/${IMAGE_NAME}:${TAG}"
+
+        # Convert newline-delimited build-args into --build-arg flags
+        BUILD_ARG_FLAGS=""
+        if [ -n "$BUILD_ARGS" ]; then
+          while IFS= read -r line; do
+            [ -n "$line" ] && BUILD_ARG_FLAGS="$BUILD_ARG_FLAGS --build-arg $line"
+          done <<< "$BUILD_ARGS"
+        fi
+
+        docker build \
+          -f "$DOCKERFILE" \
+          $BUILD_ARG_FLAGS \
+          -t "$IMAGE_URI" \
+          "$CONTEXT"
+
+        docker push "$IMAGE_URI"
+
+        echo "image-uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
