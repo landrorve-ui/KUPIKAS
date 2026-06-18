@@ -6,7 +6,7 @@ export class BackendService {
     return {
       status:  'OK',
       version: '1.0.0',
-      key:     process.env.BACKEND_KEY,
+      key:     process.env.BACKEND_KEY ?? 'not set',
     }
   }
 }
