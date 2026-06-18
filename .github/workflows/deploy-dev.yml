@@ -26,7 +26,7 @@ on:
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION || 'us-west-1' }}
-  ECS_CLUSTER: ${{ vars.ECS_CLUSTER || 'telemetry-cluster' }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER || 'zupikas-cluster' }}
   ECS_BACKEND_SERVICE: ${{ vars.ECS_BACKEND_SERVICE || 'tc-backend-dev' }}
   ECS_QUEUE_JOB_SERVICE: ${{ vars.ECS_QUEUE_JOB_SERVICE || 'tc-queue-job-dev' }}
   ECS_TRIGGER_JOB_SERVICE: ${{ vars.ECS_TRIGGER_JOB_SERVICE || 'tc-trigger-job-dev' }}
