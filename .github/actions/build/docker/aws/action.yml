@@ -63,7 +63,6 @@ runs:
       run: |
         IMAGE_URI="${REGISTRY}/${IMAGE_NAME}:${TAG}"
 
-        # Convert newline-delimited build-args into --build-arg flags
         BUILD_ARG_FLAGS=""
         if [ -n "$BUILD_ARGS" ]; then
           while IFS= read -r line; do

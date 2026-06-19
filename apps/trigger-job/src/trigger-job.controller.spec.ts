@@ -16,7 +16,7 @@ describe('TriggerJobController', () => {
 
   describe('root', () => {
     it('should return "Hello World!"', () => {
-      expect(triggerJobController.getHello()).toBe('Hello World!');
+      expect(triggerJobController.healthCheck()).toBe('Hello World!');
     });
   });
 });

@@ -1,0 +1,278 @@
+name: Build and Deploy to ECS
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_infra:
+        description: "Redeploy infrastructure task (Kafka/PG/Redis)?"
+        required: false
+        default: false
+        type: boolean
+      deploy_backend:
+        description: "Build and deploy backend?"
+        required: false
+        default: true
+        type: boolean
+      deploy_queue_job:
+        description: "Build and deploy queue job?"
+        required: false
+        default: true
+        type: boolean
+      deploy_trigger_job:
+        description: "Build and deploy trigger job?"
+        required: false
+        default: true
+        type: boolean
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-west-1' }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER || 'zupikas-cluster' }}
+  ECS_BACKEND_SERVICE: ${{ vars.ECS_BACKEND_SERVICE || 'tc-backend-dev' }}
+  ECS_QUEUE_JOB_SERVICE: ${{ vars.ECS_QUEUE_JOB_SERVICE || 'tc-queue-job-dev' }}
+  ECS_TRIGGER_JOB_SERVICE: ${{ vars.ECS_TRIGGER_JOB_SERVICE || 'tc-trigger-job-dev' }}
+
+jobs:
+  build-and-push-backend:
+    name: Build and Push Backend Service
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      image-uri: ${{ steps.build_step.outputs.image-uri }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build and Push Backend to Docker Registry
+        id: build_step
+        uses: ./.github/actions/build/docker/aws
+        with:
+          image-name: "tc-backend-dev"
+          dockerfile-path: "docker/Dockerfile.backend"
+          context: "."
+          aws-region: "us-west-1"
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_DEV }}
+          deploy-env: "dev"
+          docker-tag: "${{ github.sha }}"
+          build-args: |
+            ENV_MODE=dev
+    if: ${{ github.event.inputs.deploy_backend == 'true' || github.event.inputs.deploy_backend == null }}
+  
+  build-and-push-queue-job:
+    name: Build and Push Queue Job Service
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      image-uri: ${{ steps.build_step.outputs.image-uri }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build and Push QueueJob to Docker Registry
+        id: build_step
+        uses: ./.github/actions/build/docker/aws
+        with:
+          image-name: "tc-queue-job-dev"
+          dockerfile-path: "docker/Dockerfile.queuejob"
+          context: "."
+          aws-region: "us-west-1"
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_DEV }}
+          deploy-env: "dev"
+          docker-tag: "${{ github.sha }}"
+          build-args: |
+            ENV_MODE=dev
+    if: ${{ github.event.inputs.deploy_queue_job == 'true' || github.event.inputs.deploy_queue_job == null }}
+  
+  build-and-push-trigger-job:
+    name: Build and Push Trigger Job Service
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      image-uri: ${{ steps.build_step.outputs.image-uri }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build and Push TriggerJob to Docker Registry
+        id: build_step
+        uses: ./.github/actions/build/docker/aws
+        with:
+          image-name: "tc-trigger-job-dev"
+          dockerfile-path: "docker/Dockerfile.triggerjob"
+          context: "."
+          aws-region: "us-west-1"
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_DEV }}
+          deploy-env: "dev"
+          docker-tag: "${{ github.sha }}"
+          build-args: |
+            ENV_MODE=dev
+    if: ${{ github.event.inputs.deploy_trigger_job == 'true' || github.event.inputs.deploy_trigger_job == null }}
+
+  deploy-backend:
+    name: Deploy Backend to ECS
+    runs-on: ubuntu-latest
+    needs: build-and-push-backend
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Current Task Definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition tc-backend-dev \
+            --query taskDefinition \
+            > task-definition.json
+
+      - name: Update ECS Task Definition with New Image
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: tc-backend-dev
+          image: ${{ needs.build-and-push-backend.outputs.image-uri }}
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_BACKEND_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+    if: ${{ github.event.inputs.deploy_backend == 'true' || github.event.inputs.deploy_backend == null }}
+
+  deploy-queue-job:
+    name: Deploy Queue Job to ECS
+    runs-on: ubuntu-latest
+    needs: build-and-push-queue-job
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Current Task Definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition tc-queue-job-dev \
+            --query taskDefinition \
+            > task-definition.json
+
+      - name: Update ECS Task Definition with New Image
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: tc-queue-job-dev
+          image: ${{ needs.build-and-push-queue-job.outputs.image-uri }}
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_QUEUE_JOB_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+    if: ${{ github.event.inputs.deploy_queue_job == 'true' || github.event.inputs.deploy_queue_job == null }}
+
+  deploy-trigger-job:
+    name: Deploy Trigger Job to ECS
+    runs-on: ubuntu-latest
+    needs: build-and-push-trigger-job
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Current Task Definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition tc-trigger-job-dev \
+            --query taskDefinition \
+            > task-definition.json
+
+      - name: Update ECS Task Definition with New Image
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: tc-trigger-job-dev
+          image: ${{ needs.build-and-push-trigger-job.outputs.image-uri }}
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_TRIGGER_JOB_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+    if: ${{ github.event.inputs.deploy_trigger_job == 'true' || github.event.inputs.deploy_trigger_job == null }}
+
+  deploy-infra:
+    name: Deploy Infrastructure Services (Kafka/PG/Redis)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Force Redeploy Infra Services
+        run: |
+          for service in \
+            ${{ vars.ECS_KAFKA_SERVICE || 'tc-kafka-dev' }} \
+            ${{ vars.ECS_POSTGRES_SERVICE || 'tc-postgres-dev' }} \
+            ${{ vars.ECS_REDIS_SERVICE || 'tc-redis-dev' }}; do
+            echo "Redeploying $service..."
+            aws ecs update-service \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service "$service" \
+              --force-new-deployment \
+              --query "service.serviceName" \
+              --output text
+          done
+
+      - name: Wait for Infra Services to Stabilize
+        run: |
+          for service in \
+            ${{ vars.ECS_KAFKA_SERVICE || 'tc-kafka-dev' }} \
+            ${{ vars.ECS_POSTGRES_SERVICE || 'tc-postgres-dev' }} \
+            ${{ vars.ECS_REDIS_SERVICE || 'tc-redis-dev' }}; do
+            echo "Waiting for $service..."
+            aws ecs wait services-stable \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --services "$service"
+          done
+    if: ${{ github.event.inputs.deploy_infra == 'true' }}

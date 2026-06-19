@@ -27,6 +27,12 @@
       ],
       "@lib/timer/*": [
         "libs/timer/src/*"
+      ],
+      "@sharedb/sharedb": [
+        "libs/sharedb/src"
+      ],
+      "@sharedb/sharedb/*": [
+        "libs/sharedb/src/*"
       ]
     }
   }

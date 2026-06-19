@@ -6,7 +6,7 @@ export class QueueJobController {
   constructor(private readonly queueJobService: QueueJobService) {}
 
   @Get()
-  getHello() {
-    return this.queueJobService.getHello();
+  healthCheck() {
+    return this.queueJobService.healthCheck();
   }
 }

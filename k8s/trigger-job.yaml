@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trigger-job
+  namespace: zupikas
+  labels:
+    app: trigger-job
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: trigger-job
+  template:
+    metadata:
+      labels:
+        app: trigger-job
+    spec:
+      containers:
+        - name: trigger-job
+          image: 431546822103.dkr.ecr.us-west-1.amazonaws.com/tc-trigger-job-dev:latest
+          ports:
+            - containerPort: 3335
+          env:
+            - name: PORT
+              value: "3335"
+            - name: NODE_ENV
+              value: "production"
+          envFrom:
+            - secretRef:
+                name: zupikas-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3335
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3335
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trigger-job
+  namespace: zupikas
+spec:
+  selector:
+    app: trigger-job
+  ports:
+    - port: 3335
+      targetPort: 3335
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: trigger-job-hpa
+  namespace: zupikas
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: trigger-job
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

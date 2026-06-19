@@ -6,7 +6,7 @@ export class TriggerJobController {
   constructor(private readonly triggerJobService: TriggerJobService) {}
 
   @Get()
-  getHello() {
-    return this.triggerJobService.getHello();
+  healthCheck() {
+    return this.triggerJobService.healthCheck();
   }
 }

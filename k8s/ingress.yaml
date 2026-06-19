@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zupikas-ingress
+  namespace: zupikas
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 3333
+          - path: /queue
+            pathType: Prefix
+            backend:
+              service:
+                name: queue-job
+                port:
+                  number: 3334
+          - path: /trigger
+            pathType: Prefix
+            backend:
+              service:
+                name: trigger-job
+                port:
+                  number: 3335

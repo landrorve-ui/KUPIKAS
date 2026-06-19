@@ -16,7 +16,7 @@ describe('QueueJobController', () => {
 
   describe('root', () => {
     it('should return "Hello World!"', () => {
-      expect(queueJobController.getHello()).toBe('Hello World!');
+      expect(queueJobController.healthCheck()).toBe('Hello World!');
     });
   });
 });

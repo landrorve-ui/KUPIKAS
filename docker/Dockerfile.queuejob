@@ -29,6 +29,6 @@ RUN npm install
 
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 3333
+EXPOSE 3334
 
 CMD ["node", "dist/apps/queue-job/main"]

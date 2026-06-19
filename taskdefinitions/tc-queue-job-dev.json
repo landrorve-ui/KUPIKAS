@@ -1,29 +1,77 @@
 {
-  "family": "tc-queue-job-dev",
-  "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
-  "cpu": "512",
-  "memory": "1024",
-  "executionRoleArn": "arn:aws:iam::431546822103:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::431546822103:role/tc-queue-job-dev-task-role",
-  "containerDefinitions": [
-    {
-      "name": "tc-queue-job-dev",
-      "image": "431546822103.dkr.ecr.us-west-1.amazonaws.com/tc-queue-job-dev:latest",
-      "essential": true,
-      "portMappings": [],
-      "environment": [
-        { "name": "NODE_ENV", "value": "development" }
-      ],
-      "secrets": [],
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/tc-queue-job-dev",
-          "awslogs-region": "us-west-1",
-          "awslogs-stream-prefix": "ecs"
+    "family": "tc-queue-job-dev",
+    "containerDefinitions": [
+        {
+            "name": "tc-queue-job-dev",
+            "image": "431546822103.dkr.ecr.us-west-1.amazonaws.com/tc-queue-job-dev:f692990650129151d9048037c59a8baa3d007dd1",
+            "cpu": 0,
+            "portMappings": [
+                {
+                    "containerPort": 3333,
+                    "hostPort": 3333,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {
+                    "name": "PORT",
+                    "value": "3333"
+                },
+                {
+                    "name": "NODE_ENV",
+                    "value": "development"
+                }
+            ],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "secrets": [
+                {
+                    "name": "BACKEND_KEY",
+                    "valueFrom": "arn:aws:secretsmanager:us-west-1:431546822103:secret:LUPIKAS/secrets-O1tGue:BACKEND_KEY::"
+                },
+                {
+                    "name": "QUEUE_JOB_KEY",
+                    "valueFrom": "arn:aws:secretsmanager:us-west-1:431546822103:secret:LUPIKAS/secrets-O1tGue:QUEUE_JOB_KEY::"
+                },
+                {
+                    "name": "TRIGGER_JOB_KEY",
+                    "valueFrom": "arn:aws:secretsmanager:us-west-1:431546822103:secret:LUPIKAS/secrets-O1tGue:TRIGGER_JOB_KEY::"
+                },
+                {
+                    "name": "port",
+                    "valueFrom": "arn:aws:secretsmanager:us-west-1:431546822103:secret:LUPIKAS/secrets-O1tGue:port::"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/queue-job",
+                    "awslogs-region": "us-west-1",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            },
+            "healthCheck": {
+                "command": [
+                    "CMD-SHELL",
+                    "wget -qO- http://localhost:3333 || exit 1"
+                ],
+                "interval": 10,
+                "timeout": 5,
+                "retries": 3,
+                "startPeriod": 10
+            },
+            "systemControls": []
         }
-      }
-    }
-  ]
+    ],
+    "taskRoleArn": "arn:aws:iam::431546822103:role/ecsTaskExecutionRole",
+    "executionRoleArn": "arn:aws:iam::431546822103:role/ecsTaskExecutionRole",
+    "networkMode": "awsvpc",
+    "volumes": [],
+    "placementConstraints": [],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "512",
+    "memory": "1024"
 }

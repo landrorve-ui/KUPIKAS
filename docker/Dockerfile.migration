@@ -1,0 +1,17 @@
+FROM node:22-alpine AS deps
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# ---- Runner ------------------------------------------------
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY libs/sharedb/prisma.config.ts ./libs/sharedb/prisma.config.ts
+COPY libs/sharedb/prisma ./libs/sharedb/prisma
+
+CMD ["npx", "prisma", "migrate", "deploy", "--config=libs/sharedb/prisma.config.ts"]

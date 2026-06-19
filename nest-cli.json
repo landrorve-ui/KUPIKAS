@@ -16,7 +16,9 @@
       "entryFile": "main",
       "sourceRoot": "apps/backend/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/backend/tsconfig.app.json"
+        "tsConfigPath": "apps/backend/tsconfig.app.json",
+        "webpack": true,
+        "webpackConfigPath": "webpack.backend.config.js"
       }
     },
     "queue-job": {
@@ -26,6 +28,15 @@
       "sourceRoot": "apps/queue-job/src",
       "compilerOptions": {
         "tsConfigPath": "apps/queue-job/tsconfig.app.json"
+      }
+    },
+    "sharedb": {
+      "type": "library",
+      "root": "libs/sharedb",
+      "entryFile": "index",
+      "sourceRoot": "libs/sharedb/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/sharedb/tsconfig.lib.json"
       }
     },
     "timer": {
