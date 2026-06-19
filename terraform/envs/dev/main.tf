@@ -13,6 +13,10 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 2.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
   backend "s3" {
     bucket         = "zupikas-terraform-state"
@@ -73,4 +77,23 @@ module "eks" {
   node_min_size       = 2
   node_max_size       = 6
   node_desired_size   = 2
+}
+
+module "monitoring" {
+  source            = "../../modules/monitoring"
+  environment       = var.environment
+  slack_webhook_url = var.slack_webhook_url
+  depends_on        = [module.eks]
+}
+
+module "aurora" {
+  source                = "../../modules/aurora"
+  environment           = var.environment
+  vpc_id                = module.vpc.vpc_id
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  eks_security_group_id = module.eks.cluster_security_group_id
+  serverless_min_acu    = 0.5
+  serverless_max_acu    = 8
+  instance_count        = 1
+  deletion_protection   = false
 }

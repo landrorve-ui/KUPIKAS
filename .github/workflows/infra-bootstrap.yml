@@ -143,19 +143,18 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_DEV }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # DATABASE_URL is managed by Terraform (aurora module) — not set here.
       - name: Create or update LUPIKAS/secrets
         env:
           BACKEND_KEY: ${{ secrets.BACKEND_KEY }}
           QUEUE_JOB_KEY: ${{ secrets.QUEUE_JOB_KEY }}
           TRIGGER_JOB_KEY: ${{ secrets.TRIGGER_JOB_KEY }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           SECRET_VALUE=$(jq -n \
             --arg bk  "$BACKEND_KEY" \
             --arg qjk "$QUEUE_JOB_KEY" \
             --arg tjk "$TRIGGER_JOB_KEY" \
-            --arg db  "$DATABASE_URL" \
-            '{BACKEND_KEY:$bk, QUEUE_JOB_KEY:$qjk, TRIGGER_JOB_KEY:$tjk, DATABASE_URL:$db}')
+            '{BACKEND_KEY:$bk, QUEUE_JOB_KEY:$qjk, TRIGGER_JOB_KEY:$tjk}')
 
           if aws secretsmanager describe-secret --secret-id "LUPIKAS/secrets" 2>/dev/null; then
             aws secretsmanager put-secret-value \
@@ -197,11 +196,13 @@ jobs:
       - name: Apply manifests
         run: |
           kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/nats.yaml
           kubectl apply -f k8s/secrets.yaml
           kubectl apply -f k8s/backend.yaml
           kubectl apply -f k8s/queue-job.yaml
           kubectl apply -f k8s/trigger-job.yaml
           kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f k8s/prometheus-rules.yaml
 
       - name: Wait for deployments
         run: |

@@ -1,3 +1,6 @@
+import { initTracing } from '@lib/telemetry';
+initTracing('backend');
+
 import { NestFactory } from '@nestjs/core';
 import { BackendModule } from './backend.module';
 

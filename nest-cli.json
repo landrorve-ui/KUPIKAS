@@ -39,6 +39,15 @@
         "tsConfigPath": "libs/sharedb/tsconfig.lib.json"
       }
     },
+    "telemetry": {
+      "type": "library",
+      "root": "libs/telemetry",
+      "entryFile": "index",
+      "sourceRoot": "libs/telemetry/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/telemetry/tsconfig.lib.json"
+      }
+    },
     "timer": {
       "type": "library",
       "root": "libs/timer",

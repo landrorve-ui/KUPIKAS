@@ -1,0 +1,47 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: zupikas-alerts
+  namespace: zupikas
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: zupikas.jobs
+      rules:
+        - alert: JobEndpointHighLatency
+          expr: |
+            histogram_quantile(0.99,
+              rate(http_server_duration_milliseconds_bucket{
+                service_name=~"backend|queue-job|trigger-job"
+              }[5m])
+            ) > 2000
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "P99 latency > 2s on {{ $labels.service_name }}"
+            description: "P99 HTTP latency is {{ $value | humanizeDuration }} on service {{ $labels.service_name }}."
+
+        - alert: JobEndpointErrors
+          expr: |
+            rate(http_server_duration_milliseconds_count{
+              service_name=~"backend|queue-job|trigger-job",
+              http_status_code=~"5.."
+            }[5m]) > 0.1
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "5xx errors on {{ $labels.service_name }}"
+            description: "{{ $labels.service_name }} is returning HTTP 5xx at {{ $value | humanize }} req/s."
+
+        - alert: ServiceDown
+          expr: |
+            up{job=~"zupikas/backend|zupikas/queue-job|zupikas/trigger-job"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.job }} is down"
+            description: "Prometheus cannot scrape {{ $labels.job }}. Pod may be crashlooping."

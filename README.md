@@ -78,7 +78,6 @@ Also add these secrets for the bootstrap workflow to populate AWS Secrets Manage
 | `BACKEND_KEY` | Backend service API key |
 | `QUEUE_JOB_KEY` | Queue-job service API key |
 | `TRIGGER_JOB_KEY` | Trigger-job service API key |
-| `DATABASE_URL` | AuroraDB connection string (e.g. `postgresql://user:pass@host:5432/db`) |
 
 ### Step 2 — Run the bootstrap workflow (automated)
 

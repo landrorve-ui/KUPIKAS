@@ -25,6 +25,10 @@ spec:
               value: "3335"
             - name: NODE_ENV
               value: "production"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "opentelemetry-collector.monitoring.svc.cluster.local:4317"
+            - name: NATS_URL
+              value: "nats://nats.zupikas.svc.cluster.local:4222"
           envFrom:
             - secretRef:
                 name: zupikas-secrets

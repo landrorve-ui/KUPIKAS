@@ -22,6 +22,12 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
+      "@lib/telemetry": [
+        "libs/telemetry/src"
+      ],
+      "@lib/telemetry/*": [
+        "libs/telemetry/src/*"
+      ],
       "@lib/timer": [
         "libs/timer/src"
       ],
